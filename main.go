@@ -34,7 +34,7 @@ func processHandler(w http.ResponseWriter, r *http.Request) {
 	ID := parseID(r)
 	result := fmt.Sprintf("|ID: %s|", ID)
 
-	// stop before adding to the queue if a request is in progress
+	// Stop before adding to the batch if a request is in progress
 	batchCondition.L.Lock()
 	for batchBlocked {
 		fmt.Printf("ID %+v Waiting for batch request to finish\n", ID)
@@ -46,7 +46,7 @@ func processHandler(w http.ResponseWriter, r *http.Request) {
 	go func() {
 		defer wg.Done()
 
-		// gather all data for the batch request
+		// Gather all data for the batch request
 		mu1.Lock()
 		fmt.Printf("ID %+v Adding data for batch request\n", ID)
 		collectedData = append(collectedData, result)
@@ -54,7 +54,7 @@ func processHandler(w http.ResponseWriter, r *http.Request) {
 		mu1.Unlock()
 
 		if mu2.TryLock() {
-			// Check if the next request is within the same second.
+			// Check if the next request is within the waiting period.
 			fmt.Printf("ID %+v Waiting for more requests\n", ID)
 			select {
 			case <-time.After(RATE_LIMIT_PERIOD_TIME * RATE_LIMIT_UNIT):
@@ -73,7 +73,7 @@ func processHandler(w http.ResponseWriter, r *http.Request) {
 
 	mu1.Lock()
 	counter--
-	// The last request to be served cleans the variables
+	// The last request to be served cleans the variables and wakes the threads waiting for the next batch
 	if counter == 0 {
 		fmt.Printf("ID %+v last routine resets the variables and awakes the waiting threads\n\n", ID)
 		defer func() {
@@ -94,6 +94,7 @@ func processHandler(w http.ResponseWriter, r *http.Request) {
 func processData(data []string, ID string) string {
 	s := fmt.Sprintf("ID: %+v Processing data: %v\n", ID, data)
 	fmt.Printf(s)
+	// Simulate some work being done with random time
 	sleepRandomTime()
 	return s
 }
