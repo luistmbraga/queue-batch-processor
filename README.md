@@ -14,4 +14,4 @@ What happens is:
 7. The request is made and placed on a global variable;
 8. The last routine to return (counter == 0) cleans the variables and awakes the waiting threads.
 
-A simple Jmeter test was added to test the POC.
+A simple Jmeter test was added to test the POC. The Jmeter test is meant to be used with the given example.
